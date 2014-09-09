@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<title>three.js - Wielka Sowa - wireframe</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+<link href="../styles/styles.css" rel="stylesheet" type="text/css" media="all">
+</head>
+<body>
+<div id="webgl"></div>
+<script src="../lib/three.min.js"></script>
+<script src="../lib/TrackballControls.js"></script> 
+<script src="../lib/MapLoader.js"></script> 
+<script src="../lib/fpsmeter.min.js"></script> 
+<script>
+var toggleFullscreen = function(){
+  var docElm = document.documentElement;
+  if(!document.fullscreen){
+    if (docElm.requestFullscreen) {
+        docElm.requestFullscreen();
+    }
+    else if (docElm.mozRequestFullScreen) {
+        docElm.mozRequestFullScreen();
+    }
+    else if (docElm.webkitRequestFullScreen) {
+        docElm.webkitRequestFullScreen();
+    }
+    else if (docElm.msRequestFullscreen) {
+        docElm.msRequestFullscreen();
+    }
+    document.fullscreen = true;
+  }
+  else{
+    if (document.exitFullscreen) {
+        document.exitFullscreen();
+    }
+    else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+    }
+    else if (document.webkitCancelFullScreen) {
+        document.webkitCancelFullScreen();
+    }
+    else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+    }
+    document.fullscreen = false;
+  }
+};
+  var meter = new FPSMeter({
+    top:      '50px',      // Meter top offset.
+    theme:    'light'
+  });
+  var width  = window.innerWidth,
+      height = window.innerHeight;
+
+  var scene = new THREE.Scene();
+
+  var camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+  camera.position.set(0, -25, 25);
+
+  var renderer = new THREE.WebGLRenderer();
+  renderer.setSize(width, height);
+
+  var terrainLoader = new THREE.MapLoader();
+  terrainLoader.load('../data/all_wire.bin', function(data) {
+
+      var geometry = new THREE.PlaneGeometry(25, 25, 149, 149);
+
+      for (var i = 0, l = geometry.vertices.length; i < l; i++) {
+          geometry.vertices[i].z = data[i] / 65535 * 10;
+      }
+
+      var material = new THREE.MeshPhongMaterial({
+          color: 0xdddddd,
+          wireframe: true
+      });
+
+      var plane = new THREE.Mesh(geometry, material);
+      scene.add(plane);
+      plane.rotation.z = 90 * Math.PI / 180;
+  });
+
+  var controls = new THREE.TrackballControls(camera);
+  document.getElementById('webgl').appendChild(renderer.domElement);
+  render();
+
+  function render() {
+    controls.update();
+    requestAnimationFrame(render);
+    renderer.render(scene, camera);
+    meter.tick();
+  }
+
+  window.onresize = function() {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+  }
+</script>
+<div onclick="toggleFullscreen()" id="button">Fullscreen</button>
+</body>
+</html>
