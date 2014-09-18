@@ -12,7 +12,19 @@
 <script src="../lib/TrackballControls.js"></script> 
 <script src="../lib/MapLoader.js"></script> 
 <script src="../lib/fpsmeter.min.js"></script> 
+<script src="../lib/jquery-2.1.1.min.js"></script> 
 <script>
+  var MEASUREMENTS_LIMIT= 2;
+  var START_MS          = 10000;
+  var logging           = true;
+
+  function Measurements() {
+    this.deviceName = "";
+    this.data = [];
+    this.apiVersion = 0;
+    this.orientation = "";
+    this.applicationType = "";
+  }
 var toggleFullscreen = function(){
   var docElm = document.documentElement;
   if(!document.fullscreen){
@@ -83,11 +95,47 @@ var toggleFullscreen = function(){
   document.getElementById('webgl').appendChild(renderer.domElement);
   render();
 
+  var deviceName = navigator.userAgent;
+  var currentMeasurements = 0;
+  var measurements = new Measurements();
+  measurements.deviceName = deviceName;
+  measurements.applicationType = "WebGL";
+
+  var start= (new Date()).getTime();
+  var ms = (new Date()).getTime();
+  console.log(deviceName);
   function render() {
     controls.update();    
     requestAnimationFrame(render);
     renderer.render(scene, camera);
     meter.tick();
+
+    //console.log( MEASUREMENTS_LIMIT);
+    //console.log(currentMeasurements );
+    //console.log(logging );
+    if(logging && (new Date()).getTime() - start > START_MS && currentMeasurements <= MEASUREMENTS_LIMIT){
+      if((new Date()).getTime() - ms > 1000 ){
+        ms = (new Date()).getTime();
+        measurements.orientation = (window.innerHeight > window.innerWidth ? "portrait" : "landscape");
+        measurements.data.push(+(Math.round(meter.fps+ "e+6")  + "e-6"))
+        //measurements.data.push(parseFloat(meter.fps).toFixed(6));
+        currentMeasurements++;
+
+        console.log(measurements);
+      }
+    }
+    else if (logging && currentMeasurements >MEASUREMENTS_LIMIT){
+      console.log("AJAX CALL ");
+      measurements.data = measurements.data.toString();
+      $.ajax({
+          url:"http://monkeyrig.duckdns.org:5000/",
+          dataType: 'json',
+          crossDomain: true,
+          type: 'POST',
+          data: measurements,
+      })
+      logging = false;
+    }
   }
 
   window.onresize = function() {
